@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta http-equiv="content-type" content="text/html; charset=UTF-8" />
+  <style>html, body {width: 100%; height: 100%; margin: 0; padding: 0;}</style>
+  <style>#map {position:absolute; top:0; bottom:0; right:0; left:0;}</style>
+
+  <!-- libs -->
+  <script src="https://cdn.jsdelivr.net/npm/leaflet@1.6.0/dist/leaflet.js"></script>
+  <script src="https://code.jquery.com/jquery-1.12.4.min.js"></script>
+  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/js/bootstrap.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Leaflet.awesome-markers/2.0.2/leaflet.awesome-markers.js"></script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.6.0/dist/leaflet.css"/>
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap.min.css"/>
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap-theme.min.css"/>
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.6.3/css/font-awesome.min.css"/>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/Leaflet.awesome-markers/2.0.2/leaflet.awesome-markers.css"/>
+  <!-- Leaflet.heat -->
+  <script src="https://cdn.jsdelivr.net/gh/python-visualization/folium@master/folium/templates/leaflet_heat.min.js"></script>
+</head>
+<body>
+  <div id="map"></div>
+
+  <script>
+    // ⬇️ REPLACED WITH YOUR NEW COORDS ⬇️
+    let coords = [
+      [39.98308, -111.33191],
+      [39.98565, -111.33347],
+      [40.11321, -111.12884],
+      [40.11686, -111.1486],
+      [40.5412,  -111.12366],
+      [39.88417, -110.77528],
+      [40.18681, -110.52542],
+      [40.18022, -111.21594],
+      [40.11612, -111.16085],
+      [40.32606, -111.07218],
+      [40.32302, -111.07893],
+      [39.88723, -110.77295],
+      [40.10682, -111.05454],
+      [40.40461, -111.27163]
+    ];
+    // ⬆️ REPLACED WITH YOUR NEW COORDS ⬆️
+
+    const fallbackCenter = [40.18, -111.12];
+
+    // Base map
+    const map = L.map("map", {
+      center: coords.length ? coords[0] : fallbackCenter,
+      zoom: 11,
+      zoomControl: true
+    });
+
+    const esriTopo = L.tileLayer(
+      "https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}",
+      { attribution: "Esri", maxZoom: 18 }
+    ).addTo(map);
+
+    // Layers
+    const heatLayer = L.heatLayer([], { radius: 55, blur: 40, minOpacity: 0.4 });
+    const gpsMarkers = L.layerGroup();
+    const trailsLayer = L.layerGroup();
+
+    const overlays = {
+      "Heatmap": heatLayer,
+      "GPS Markers": gpsMarkers,
+      "Trails": trailsLayer
+    };
+    L.control.layers({ "Esri Topo": esriTopo }, overlays, { collapsed: false, position: "topright" }).addTo(map);
+
+    heatLayer.addTo(map);
+    gpsMarkers.addTo(map);
+
+    function refreshPoints(points){
+      gpsMarkers.clearLayers();
+      heatLayer.setLatLngs([]);
+
+      points.forEach(function(pt){
+        L.circleMarker(pt, {
+          color: "black",
+          fillColor: "white",
+          fillOpacity: 0.7,
+          radius: 5,
+          weight: 3
+        })
+        .bindPopup(pt[0].toFixed(5) + ", " + pt[1].toFixed(5))
+        .addTo(gpsMarkers);
+      });
+
+      heatLayer.setLatLngs(points);
+
+      if(points.length){
+        const bounds = L.latLngBounds(points);
+        map.fitBounds(bounds, { padding: [20, 20] });
+      } else {
+        map.setView(fallbackCenter, 11);
+      }
+    }
+
+    // Initial render
+    refreshPoints(coords);
+  </script>
+</body>
+</html>
